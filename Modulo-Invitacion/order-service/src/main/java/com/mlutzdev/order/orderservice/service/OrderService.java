@@ -42,8 +42,8 @@ public class OrderService {
                 .stream()
                 .map(OrderLineItems::getCodigoSku).collect(Collectors.toList());
 
-        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().method(HttpMethod.GET)
-                        .uri("http://localhost:8082/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku", codigosSku).build())
+        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().get()
+                        .uri("http://inventario-service/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku",codigosSku).build())
                         .retrieve()
                         .bodyToMono(InventarioResponse[].class)
                         .block();
