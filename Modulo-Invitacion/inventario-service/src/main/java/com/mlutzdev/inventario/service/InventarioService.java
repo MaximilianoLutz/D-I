@@ -1,0 +1,30 @@
+package com.mlutzdev.inventario.service;
+
+import com.mlutzdev.inventario.controller.InventarioController;
+import com.mlutzdev.inventario.dto.InventarioDtoResponse;
+import com.mlutzdev.inventario.repository.I_InventarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class InventarioService {
+
+    @Autowired
+    private I_InventarioRepository inventarioRepository;
+
+    @Transactional(readOnly = true)
+    public List<InventarioDtoResponse> inStock(List<String> codigoSku){
+        return inventarioRepository.findByCodigoSkuIn(codigoSku)
+                .stream()
+                .map(inventario ->
+                    InventarioDtoResponse.builder()
+                            .codigoSku(inventario.getCodigoSku())
+                            .inStock(inventario.getCantidad() > 0).build()
+                ).collect(Collectors.toList());
+    }
+}
