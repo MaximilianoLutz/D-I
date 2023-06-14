@@ -26,7 +26,7 @@ public class OrderService {
     private I_OrderRepository i_OrderRepository;
 
     @Autowired
-    private WebClient webClient;
+    private WebClient.Builder webClientBuilder;
 
     public void placeOrder(OrderRequest orderRequest){
         Order order = new Order();
@@ -42,7 +42,7 @@ public class OrderService {
                 .stream()
                 .map(OrderLineItems::getCodigoSku).collect(Collectors.toList());
 
-        InventarioResponse [] inventarioResponsesArray = webClient.method(HttpMethod.GET)
+        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().method(HttpMethod.GET)
                         .uri("http://localhost:8082/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku", codigosSku).build())
                         .retrieve()
                         .bodyToMono(InventarioResponse[].class)
