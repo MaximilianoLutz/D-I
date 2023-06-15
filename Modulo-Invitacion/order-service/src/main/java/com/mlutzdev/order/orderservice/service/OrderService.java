@@ -4,12 +4,14 @@ package com.mlutzdev.order.orderservice.service;
 import com.mlutzdev.order.orderservice.dto.InventarioResponse;
 import com.mlutzdev.order.orderservice.dto.OrderLineItemsDto;
 import com.mlutzdev.order.orderservice.dto.OrderRequest;
+import com.mlutzdev.order.orderservice.event.OrderPlacedEvent;
 import com.mlutzdev.order.orderservice.model.Order;
 import com.mlutzdev.order.orderservice.model.OrderLineItems;
 import com.mlutzdev.order.orderservice.repository.I_OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,6 +24,9 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class OrderService {
+
+    @Autowired
+    private KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     @Autowired
     private I_OrderRepository i_OrderRepository;
@@ -63,6 +68,7 @@ public class OrderService {
 
             if(allProductsInStock){
                 i_OrderRepository.save(order);
+                kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getNumeroDePedido()));
                 return "Pedido realizado con éxito";
             }else{
                 throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");

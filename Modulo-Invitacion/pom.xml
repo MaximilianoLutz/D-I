@@ -23,7 +23,7 @@
         <module>inventario-service</module>
         <module>discovery-server</module>
         <module>api-gateway</module>
-
+        <module>consumer-service</module>
     </modules>
 
     <properties>
