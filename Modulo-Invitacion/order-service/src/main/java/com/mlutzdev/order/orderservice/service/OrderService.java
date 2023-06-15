@@ -1,7 +1,6 @@
 package com.mlutzdev.order.orderservice.service;
 
-import brave.Span;
-import brave.Tracer;
+
 import com.mlutzdev.order.orderservice.dto.InventarioResponse;
 import com.mlutzdev.order.orderservice.dto.OrderLineItemsDto;
 import com.mlutzdev.order.orderservice.dto.OrderRequest;
@@ -9,6 +8,8 @@ import com.mlutzdev.order.orderservice.model.Order;
 import com.mlutzdev.order.orderservice.model.OrderLineItems;
 import com.mlutzdev.order.orderservice.repository.I_OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -48,7 +49,7 @@ public class OrderService {
 
         Span inventarioServiceLookup  = tracer.nextSpan().name("InventarioServiceSpan");
 
-        try(Tracer.SpanInScope isLookup = tracer.withSpanInScope(inventarioServiceLookup.start())){
+        try(Tracer.SpanInScope isLookup = tracer.withSpan(inventarioServiceLookup.start())){
             inventarioServiceLookup.tag("call","inventario-service");
 
 
@@ -67,7 +68,7 @@ public class OrderService {
                 throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");
             }
         }finally {
-            inventarioServiceLookup.flush();
+            inventarioServiceLookup.end();
         }
 
     }
