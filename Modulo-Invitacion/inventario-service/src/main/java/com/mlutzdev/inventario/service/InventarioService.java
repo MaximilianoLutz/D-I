@@ -23,9 +23,6 @@ public class InventarioService {
     @Transactional(readOnly = true)
     @SneakyThrows
     public List<InventarioDtoResponse> inStock(List<String> codigoSku){
-        log.info("wait start");
-        Thread.sleep(5000);
-        log.info("wait end");
 
         return inventarioRepository.findByCodigoSkuIn(codigoSku)
                 .stream()

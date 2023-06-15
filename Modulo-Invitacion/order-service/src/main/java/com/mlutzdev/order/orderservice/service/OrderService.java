@@ -1,5 +1,7 @@
 package com.mlutzdev.order.orderservice.service;
 
+import brave.Span;
+import brave.Tracer;
 import com.mlutzdev.order.orderservice.dto.InventarioResponse;
 import com.mlutzdev.order.orderservice.dto.OrderLineItemsDto;
 import com.mlutzdev.order.orderservice.dto.OrderRequest;
@@ -7,11 +9,9 @@ import com.mlutzdev.order.orderservice.model.Order;
 import com.mlutzdev.order.orderservice.model.OrderLineItems;
 import com.mlutzdev.order.orderservice.repository.I_OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +28,10 @@ public class OrderService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-    @Transactional(readOnly = true)
+    @Autowired
+    private Tracer tracer;
+
+    @Transactional
     public String placeOrder(OrderRequest orderRequest){
         Order order = new Order();
         order.setNumeroDePedido(UUID.randomUUID().toString());
@@ -43,24 +46,29 @@ public class OrderService {
                 .stream()
                 .map(OrderLineItems::getCodigoSku).collect(Collectors.toList());
 
-        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().get()
+        Span inventarioServiceLookup  = tracer.nextSpan().name("InventarioServiceSpan");
+
+        try(Tracer.SpanInScope isLookup = tracer.withSpanInScope(inventarioServiceLookup.start())){
+            inventarioServiceLookup.tag("call","inventario-service");
+
+
+            InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().get()
                         .uri("http://inventario-service/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku",codigosSku).build())
                         .retrieve()
                         .bodyToMono(InventarioResponse[].class)
                         .block();
+            boolean allProductsInStock = Arrays.stream(inventarioResponsesArray)
+                    .allMatch(InventarioResponse::isInStock);
 
-
-
-        boolean allProductsInStock = Arrays.stream(inventarioResponsesArray)
-                        .allMatch(InventarioResponse::isInStock);
-
-        if(allProductsInStock){
-            i_OrderRepository.save(order);
-            return "Pedido realizado con éxito";
-        }else{
-            throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");
+            if(allProductsInStock){
+                i_OrderRepository.save(order);
+                return "Pedido realizado con éxito";
+            }else{
+                throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");
+            }
+        }finally {
+            inventarioServiceLookup.flush();
         }
-
 
     }
     private OrderLineItems dtoToOrder(OrderLineItemsDto orderLineItemsDto){
