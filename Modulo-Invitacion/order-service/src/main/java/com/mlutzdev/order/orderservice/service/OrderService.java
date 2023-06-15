@@ -28,7 +28,8 @@ public class OrderService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-    public void placeOrder(OrderRequest orderRequest){
+    @Transactional(readOnly = true)
+    public String placeOrder(OrderRequest orderRequest){
         Order order = new Order();
         order.setNumeroDePedido(UUID.randomUUID().toString());
 
@@ -42,8 +43,8 @@ public class OrderService {
                 .stream()
                 .map(OrderLineItems::getCodigoSku).collect(Collectors.toList());
 
-        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().method(HttpMethod.GET)
-                        .uri("http://localhost:8082/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku", codigosSku).build())
+        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().get()
+                        .uri("http://inventario-service/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku",codigosSku).build())
                         .retrieve()
                         .bodyToMono(InventarioResponse[].class)
                         .block();
@@ -55,6 +56,7 @@ public class OrderService {
 
         if(allProductsInStock){
             i_OrderRepository.save(order);
+            return "Pedido realizado con éxito";
         }else{
             throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");
         }
