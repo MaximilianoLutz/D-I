@@ -28,7 +28,8 @@ public class OrderService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-    public void placeOrder(OrderRequest orderRequest){
+    @Transactional(readOnly = true)
+    public String placeOrder(OrderRequest orderRequest){
         Order order = new Order();
         order.setNumeroDePedido(UUID.randomUUID().toString());
 
@@ -55,6 +56,7 @@ public class OrderService {
 
         if(allProductsInStock){
             i_OrderRepository.save(order);
+            return "Pedido realizado con éxito";
         }else{
             throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");
         }
