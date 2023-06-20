@@ -1,4 +1,4 @@
-package com.mlutzdev.order.orderservice.event;
+package com.mlutzdev.consumer.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

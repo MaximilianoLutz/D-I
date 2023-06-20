@@ -29,6 +29,6 @@ public class SecurityConfig {
     }
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        return ReactiveJwtDecoders.fromOidcIssuerLocation("http://localhost:8081/realms/Fist-Advance");
+        return ReactiveJwtDecoders.fromOidcIssuerLocation("http://localhost:8181/realms/Fist-Advance");
     }
 }
