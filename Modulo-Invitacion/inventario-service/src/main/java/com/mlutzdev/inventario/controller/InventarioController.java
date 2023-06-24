@@ -1,5 +1,6 @@
 package com.mlutzdev.inventario.controller;
 
+import com.mlutzdev.inventario.dto.InventarioDtoRequest;
 import com.mlutzdev.inventario.dto.InventarioDtoResponse;
 import com.mlutzdev.inventario.service.InventarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,9 @@ public class InventarioController {
     @Autowired
     private InventarioService inventarioService;
 
-    @GetMapping()
-    public List<InventarioDtoResponse> isInStock(@RequestParam List<String> codigoSku){
+    @PostMapping()
+    public List<InventarioDtoResponse> isInStock(@RequestBody List<InventarioDtoRequest> codigoSku){
+
         return inventarioService.inStock(codigoSku);
     }
 }

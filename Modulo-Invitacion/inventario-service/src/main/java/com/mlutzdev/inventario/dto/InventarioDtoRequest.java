@@ -1,4 +1,4 @@
-package com.mlutzdev.order.orderservice.dto;
+package com.mlutzdev.inventario.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class InventarioRequest {
+public class InventarioDtoRequest {
 
     private String codigoSku;
     private Integer cantidad;

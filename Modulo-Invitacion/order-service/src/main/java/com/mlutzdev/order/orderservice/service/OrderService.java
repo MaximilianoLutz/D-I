@@ -1,15 +1,18 @@
 package com.mlutzdev.order.orderservice.service;
 
-import com.mlutzdev.order.orderservice.dto.InventarioResponse;
+import com.mlutzdev.order.orderservice.dto.InventarioDtoRequest;
+import com.mlutzdev.order.orderservice.dto.InventarioDtoResponse;
 import com.mlutzdev.order.orderservice.dto.OrderLineItemsDto;
-import com.mlutzdev.order.orderservice.dto.OrderRequest;
+import com.mlutzdev.order.orderservice.dto.OrderDtoRequest;
 import com.mlutzdev.order.orderservice.model.Order;
 import com.mlutzdev.order.orderservice.model.OrderLineItems;
 import com.mlutzdev.order.orderservice.repository.I_OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -28,31 +31,34 @@ public class OrderService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-    @Transactional(readOnly = true)
-    public String placeOrder(OrderRequest orderRequest){
+
+    @Transactional()
+    public String placeOrder(OrderDtoRequest orderDtoRequest){
         Order order = new Order();
         order.setNumeroDePedido(UUID.randomUUID().toString());
 
-        List<OrderLineItems> orderLineItems = orderRequest
+        List<OrderLineItems> orderLineItems = orderDtoRequest
                 .getOrderLineItemsDtosList()
                 .stream().map(this::dtoToOrder).collect(Collectors.toList());
 
         order.setOrderLineItems(orderLineItems);
 
-        List<String> codigosSku = order.getOrderLineItems()
+        List<InventarioDtoRequest> codigosSku = order.getOrderLineItems()
                 .stream()
-                .map(OrderLineItems::getCodigoSku).collect(Collectors.toList());
+                .map(line -> new InventarioDtoRequest(line.getCodigoSku(), line.getCantidad())).collect(Collectors.toList());
 
-        InventarioResponse [] inventarioResponsesArray = webClientBuilder.build().get()
-                        .uri("http://inventario-service/api/inventario", uriBuilder -> uriBuilder.queryParam("codigoSku",codigosSku).build())
+
+        InventarioDtoResponse[] inventarioDtoResponsesArray = webClientBuilder.build().post()
+                        .uri("http://inventario-service/api/inventario")
+                        .body(Mono.just(codigosSku), new ParameterizedTypeReference<List<InventarioDtoRequest>>(){})
                         .retrieve()
-                        .bodyToMono(InventarioResponse[].class)
+                        .bodyToMono(InventarioDtoResponse[].class)
                         .block();
 
 
 
-        boolean allProductsInStock = Arrays.stream(inventarioResponsesArray)
-                        .allMatch(InventarioResponse::isInStock);
+        boolean allProductsInStock = Arrays.stream(inventarioDtoResponsesArray)
+                        .allMatch(InventarioDtoResponse::isInStock);
 
         if(allProductsInStock){
             i_OrderRepository.save(order);

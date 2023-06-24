@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class InventarioRequest {
+public class InventarioDtoRequest {
 
     private String codigoSku;
     private Integer cantidad;
