@@ -6,7 +6,10 @@ import com.mlutzdev.order.orderservice.dto.OrderLineItemsDto;
 import com.mlutzdev.order.orderservice.dto.OrderDtoRequest;
 import com.mlutzdev.order.orderservice.model.Order;
 import com.mlutzdev.order.orderservice.model.OrderLineItems;
+import com.mlutzdev.order.orderservice.publisher.Publisher;
 import com.mlutzdev.order.orderservice.repository.I_OrderRepository;
+import com.mlutzdev.order.orderservice.utils.OrderSerializer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.reactive.ClientHttpRequest;
@@ -16,6 +19,7 @@ import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -31,9 +35,15 @@ public class OrderService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
+    @Autowired
+    private Publisher publisher;
+
+    @Autowired
+    private OrderSerializer orderSerializer;
+
 
     @Transactional()
-    public String placeOrder(OrderDtoRequest orderDtoRequest){
+    public String placeOrder(OrderDtoRequest orderDtoRequest) throws IOException {
         Order order = new Order();
         order.setNumeroDePedido(UUID.randomUUID().toString());
 
@@ -61,8 +71,11 @@ public class OrderService {
                         .allMatch(InventarioDtoResponse::isInStock);
 
         if(allProductsInStock){
+
+            publisher.send(OrderSerializer.getBiteArray(order));
             i_OrderRepository.save(order);
             return "Pedido realizado con éxito";
+
         }else{
             throw new IllegalArgumentException("Hay productos sin stock en el pedido solicitado");
         }

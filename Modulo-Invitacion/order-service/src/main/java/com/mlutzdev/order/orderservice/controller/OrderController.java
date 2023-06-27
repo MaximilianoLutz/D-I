@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -28,7 +29,13 @@ public class OrderController {
     @TimeLimiter(name = "inventario")
     @Retry(name = "inventario")
     public CompletableFuture<String> realizarPedido(@RequestBody OrderDtoRequest orderDtoRequest){
-        return CompletableFuture.supplyAsync(() -> orderService.placeOrder(orderDtoRequest));
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return orderService.placeOrder(orderDtoRequest);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
     }
 

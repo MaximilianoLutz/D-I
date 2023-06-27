@@ -1,6 +1,5 @@
 package com.mlutzdev.inventario.service;
 
-import com.mlutzdev.inventario.controller.InventarioController;
 import com.mlutzdev.inventario.dto.InventarioDtoRequest;
 import com.mlutzdev.inventario.dto.InventarioDtoResponse;
 import com.mlutzdev.inventario.repository.I_InventarioRepository;
