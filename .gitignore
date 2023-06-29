@@ -1,3 +1,7 @@
+prometheus/
+DockerRabbitDev/
+mysql_keycloak_data/
+target/
 # Compiled class file
 *.class
 
